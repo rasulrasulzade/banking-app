@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  postgresDB:
+    image: postgres:14-alpine
+    container_name: postgresDB
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: 1234
+    ports:
+      - "5432:5432"
+    volumes:
+      - "./volumes/db:/var/lib/postgresql/data"
+
+  migration:
+    depends_on:
+      - postgresDB
+    image: liquibase/liquibase:4.17
+    container_name: postgres-migration
+    restart: on-failure
+    volumes:
+      - ./liquibase/changeLog/:/liquibase/changelog/
+      - ./liquibase/scripts:/liquibase/scripts
+    command: update --changelog-file=dbchangelog.xml --url=jdbc:postgresql://postgresDB:5432/postgres --username=user --password=1234
