@@ -30,9 +30,9 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation group: 'io.zonky.test', name: 'embedded-database-spring-test', version: '2.1.2'
-    testImplementation group: 'io.zonky.test', name: 'embedded-postgres', version: '2.0.1'
-    testImplementation group: 'org.liquibase', name: 'liquibase-core', version: '4.23.1'
+    testImplementation 'org.testcontainers:testcontainers:1.15.3'
+    testImplementation 'org.testcontainers:postgresql:1.15.3'
+    testImplementation group: 'org.testcontainers', name: 'junit-jupiter', version: '1.18.3'
 }
 
 

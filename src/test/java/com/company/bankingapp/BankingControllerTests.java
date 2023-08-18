@@ -1,21 +1,32 @@
 package com.company.bankingapp;
 
+
 import com.company.bankingapp.dto.*;
 import com.company.bankingapp.entity.BankAccount;
 import com.company.bankingapp.entity.Customer;
 import com.company.bankingapp.repository.BankAccountRepository;
 import com.company.bankingapp.repository.CustomerRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.support.TestPropertySourceUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.MountableFile;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -29,11 +40,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(args = "--spring.profiles.active=test")
-@AutoConfigureEmbeddedDatabase(provider = AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY,
-        refresh = AutoConfigureEmbeddedDatabase.RefreshMode.BEFORE_EACH_TEST_METHOD)
+@SpringBootTest
+@ActiveProfiles("test")
+@Testcontainers
 @AutoConfigureMockMvc
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@ContextConfiguration(initializers = BankingControllerTests.DataSourceInitializer.class)
 public class BankingControllerTests {
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -45,6 +59,35 @@ public class BankingControllerTests {
 
     @Autowired
     private CustomerRepository customerRepository;
+
+
+    @Container
+    static final PostgreSQLContainer<?> postgresContainer = new PostgreSQLContainer<>("postgres:latest")
+            .withDatabaseName("testdb")
+            .withUsername("test")
+            .withPassword("test")
+            .withCopyFileToContainer(
+                    MountableFile.forClasspathResource("/initial.sql"),
+                    "/docker-entrypoint-initdb.d/"
+            );
+
+    public static class DataSourceInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+
+        @Override
+        public void initialize(ConfigurableApplicationContext applicationContext) {
+            TestPropertySourceUtils.addInlinedPropertiesToEnvironment(
+                    applicationContext,
+                    "spring.datasource.url=" + postgresContainer.getJdbcUrl(),
+                    "spring.datasource.username=" + postgresContainer.getUsername(),
+                    "spring.datasource.password=" + postgresContainer.getPassword()
+            );
+        }
+    }
+
+    @BeforeAll
+    static void setUp() {
+        postgresContainer.start();
+    }
 
     @DisplayName("Create bank account")
     @Test
@@ -161,7 +204,7 @@ public class BankingControllerTests {
     public void testGetBankAccountPositive() throws Exception{
         Customer customer = findCustomer(2L);
         BankAccount bankAccount = BankAccount.builder()
-                .accountNumber("ABC1692177596088")
+                .accountNumber(generateBankAccount())
                 .balance(BigDecimal.valueOf(100))
                 .currency("USD")
                 .build();
@@ -195,7 +238,7 @@ public class BankingControllerTests {
 
         BankAccount bankAccount1 = BankAccount.builder()
                 .customer(customer1)
-                .accountNumber("ABC1692177596088")
+                .accountNumber(generateBankAccount())
                 .balance(BigDecimal.valueOf(100))
                 .currency("USD")
                 .build();
@@ -203,7 +246,7 @@ public class BankingControllerTests {
         Customer customer2 = findCustomer(2L);
         BankAccount bankAccount2 = BankAccount.builder()
                 .customer(customer2)
-                .accountNumber("ABC1692177596089")
+                .accountNumber(generateBankAccount())
                 .balance(BigDecimal.valueOf(200))
                 .currency("USD")
                 .build();
@@ -240,8 +283,12 @@ public class BankingControllerTests {
         assertEquals(0, expected.getBalance().compareTo(actual.getBalance()));
         assertEquals(expected.getAccountNumber(), actual.getAccountNumber());
     }
-    
+
     private Customer findCustomer(Long id){
         return customerRepository.findById(id).orElse(null);
+    }
+
+    public String generateBankAccount() {
+        return "ABC" + System.currentTimeMillis();
     }
 }

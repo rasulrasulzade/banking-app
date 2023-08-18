@@ -4,6 +4,9 @@ docker-compose up
 // run spring app <br>
 ./gradlew bootRun 
 
+// run tests <br>
+./gradlew test
+
 POST /{customerId}/bankAccounts <br>
 Example payload: <br> {
 "currency":"USD",
