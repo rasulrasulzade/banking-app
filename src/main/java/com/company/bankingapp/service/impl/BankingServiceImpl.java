@@ -25,6 +25,14 @@ public class BankingServiceImpl implements BankingService {
     private final CustomerRepository customerRepository;
 
     @Override
+    public CustomerDTO createCustomer(CreateCustomerRequest request) {
+        Customer customerEnt = customerRepository.save(Customer.builder()
+                        .name(request.getName())
+                .build());
+        return new CustomerDTO(customerEnt.getId(), customerEnt.getName());
+    }
+
+    @Override
     public CreateBankAccountResponse createBankAccount(Long customerId, CreateBankAccountRequest request) {
         BankAccount bankAccountEnt = BankAccount.builder()
                 .balance(request.getAmount())

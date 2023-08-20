@@ -60,6 +60,9 @@ public class BankingControllerTests {
     @Autowired
     private CustomerRepository customerRepository;
 
+    @Test
+    void contextLoads() {
+    }
 
     @Container
     static final PostgreSQLContainer<?> postgresContainer = new PostgreSQLContainer<>("postgres:latest")
@@ -154,7 +157,7 @@ public class BankingControllerTests {
 
     @DisplayName("Get bank accounts Positive")
     @Test
-    public void testGetBankAccountsPositive() throws Exception{
+    public void testGetBankAccountsPositive() throws Exception {
         Customer customer = findCustomer(1L);
         Long customerId = customer.getId();
 
@@ -188,7 +191,7 @@ public class BankingControllerTests {
 
     @DisplayName("Get bank accounts negative")
     @Test
-    public void testGetBankAccountsNegative() throws Exception{
+    public void testGetBankAccountsNegative() throws Exception {
         ResultActions resultActions = mockMvc.perform(get("/{customerId}/bankAccounts", 6L));
         resultActions.andDo(print())
                 .andExpect(status().isOk());
@@ -201,7 +204,7 @@ public class BankingControllerTests {
 
     @DisplayName("Get bank account Positive")
     @Test
-    public void testGetBankAccountPositive() throws Exception{
+    public void testGetBankAccountPositive() throws Exception {
         Customer customer = findCustomer(2L);
         BankAccount bankAccount = BankAccount.builder()
                 .accountNumber(generateBankAccount())
@@ -277,14 +280,14 @@ public class BankingControllerTests {
 
     }
 
-    private void assertBankAccount(BankAccount expected, BankAccountDTO actual){
+    private void assertBankAccount(BankAccount expected, BankAccountDTO actual) {
         assertEquals(expected.getId(), actual.getId());
         assertEquals(expected.getCustomer().getId(), actual.getCustomerId());
         assertEquals(0, expected.getBalance().compareTo(actual.getBalance()));
         assertEquals(expected.getAccountNumber(), actual.getAccountNumber());
     }
 
-    private Customer findCustomer(Long id){
+    private Customer findCustomer(Long id) {
         return customerRepository.findById(id).orElse(null);
     }
 

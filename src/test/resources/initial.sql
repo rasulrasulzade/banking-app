@@ -10,8 +10,8 @@ CREATE TABLE banking_app.customer
     name character varying NOT NULL
 );
 
-INSERT INTO banking_app.customer
-VALUES (1, 'Arisha Barron'),
-       (2, 'Branden Gibson'),
-       (3, 'Rhonda Church'),
-       (4, 'Georgina Hazel');
+INSERT INTO banking_app.customer(name)
+VALUES ('Arisha Barron'),
+       ('Branden Gibson'),
+       ('Rhonda Church'),
+       ('Georgina Hazel');
