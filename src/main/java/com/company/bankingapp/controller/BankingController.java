@@ -13,6 +13,7 @@ public class BankingController {
     private final BankingService bankingService;
 
     @PostMapping("/customers")
+    @ResponseStatus(HttpStatus.CREATED)
     public CustomerDTO saveCustomer(@RequestBody @Valid CreateCustomerRequest request){
        return bankingService.createCustomer(request);
     }

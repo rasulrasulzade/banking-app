@@ -7,26 +7,16 @@ import com.company.bankingapp.entity.Customer;
 import com.company.bankingapp.repository.BankAccountRepository;
 import com.company.bankingapp.repository.CustomerRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.ApplicationContextInitializer;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.support.TestPropertySourceUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.MountableFile;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -42,11 +32,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @ActiveProfiles("test")
-@Testcontainers
 @AutoConfigureMockMvc
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@ContextConfiguration(initializers = BankingControllerTests.DataSourceInitializer.class)
-public class BankingControllerTests {
+public class BankingControllerTests extends DatabaseTestConfig{
 
     @Autowired
     private MockMvc mockMvc;
@@ -64,32 +51,21 @@ public class BankingControllerTests {
     void contextLoads() {
     }
 
-    @Container
-    static final PostgreSQLContainer<?> postgresContainer = new PostgreSQLContainer<>("postgres:latest")
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test")
-            .withCopyFileToContainer(
-                    MountableFile.forClasspathResource("/initial.sql"),
-                    "/docker-entrypoint-initdb.d/"
-            );
+    @DisplayName("Create customer")
+    @Test
+    public void testCreateCustomer() throws Exception {
+        CreateCustomerRequest createCustomerRequest =CreateCustomerRequest.builder()
+                .name("Anton Chigurh")
+                .build();
+        ResultActions resultActions = mockMvc.perform(post("/customers")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(createCustomerRequest)));
 
-    public static class DataSourceInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
-
-        @Override
-        public void initialize(ConfigurableApplicationContext applicationContext) {
-            TestPropertySourceUtils.addInlinedPropertiesToEnvironment(
-                    applicationContext,
-                    "spring.datasource.url=" + postgresContainer.getJdbcUrl(),
-                    "spring.datasource.username=" + postgresContainer.getUsername(),
-                    "spring.datasource.password=" + postgresContainer.getPassword()
-            );
-        }
-    }
-
-    @BeforeAll
-    static void setUp() {
-        postgresContainer.start();
+        resultActions.andDo(print())
+                .andExpect(status().isCreated());
+        String contentAsString = resultActions.andReturn().getResponse().getContentAsString();
+        CustomerDTO customerDTO = objectMapper.readValue(contentAsString, CustomerDTO.class);
+        assertEquals(createCustomerRequest.getName(), customerDTO.name());
     }
 
     @DisplayName("Create bank account")
@@ -122,7 +98,7 @@ public class BankingControllerTests {
     @DisplayName("Create bank account negative")
     @Test
     public void testBankAccountNegativeScenarioWrongCustomer() throws Exception {
-        Long customerId = 5L;
+        Long customerId = 99L;
         CreateBankAccountRequest bankAccountRequest = CreateBankAccountRequest.builder()
                 .currency("USD")
                 .amount(BigDecimal.valueOf(100))
