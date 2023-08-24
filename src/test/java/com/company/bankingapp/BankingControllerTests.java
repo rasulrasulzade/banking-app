@@ -33,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
-public class BankingControllerTests extends DatabaseTestConfig{
+public class BankingControllerTests extends AbstractTest {
 
     @Autowired
     private MockMvc mockMvc;
